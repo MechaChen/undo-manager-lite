@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const useUndoRedo = <T>(initialValue: T) => {
     const [undoStack, setUndoStack] = useState<T[]>([initialValue]);
@@ -28,6 +28,24 @@ const useUndoRedo = <T>(initialValue: T) => {
         const nextStep = Math.min(UPPER_BOUND, currentIndex + 1);
         setCurrentIndex(nextStep);
     }
+
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            const isUndoShortcut = event.key === 'z' && event.ctrlKey;
+            const isRedoShortcut = event.key === 'y' && event.ctrlKey;
+
+            if (isUndoShortcut) {
+                event.preventDefault();
+                undo();
+            } else if (isRedoShortcut) {
+                event.preventDefault();
+                redo();
+            }
+        }
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [currentIndex, redo, undo]);
 
     const curState = undoStack[currentIndex];
 
