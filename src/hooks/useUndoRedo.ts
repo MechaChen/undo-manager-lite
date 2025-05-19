@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 
-const useUndoRedo = <T>(initialValue: T) => {
+const isMac = /Macintosh|MacIntel|MacPPC|Mac68K/.test(navigator.userAgent);
+const isWindows = /Win32|Win64|Windows|WinCE/.test(navigator.userAgent);
+
+const useUndoRedo = <T>(initialValue: T, limit: number = 10) => {
     const [undoStack, setUndoStack] = useState<T[]>([initialValue]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -14,8 +17,13 @@ const useUndoRedo = <T>(initialValue: T) => {
         // 3. redo
 
     const push = (value: T) => {
-        const newUndoStack = undoStack.slice(0, currentIndex + 1);
+        let newUndoStack = undoStack.slice(0, currentIndex + 1);
         newUndoStack.push(value);
+
+        if (undoStack.length > limit) {
+            newUndoStack = newUndoStack.slice(undoStack.length - limit);
+        }
+
         setUndoStack(newUndoStack);
         setCurrentIndex(newUndoStack.length - 1);
     }
@@ -36,16 +44,27 @@ const useUndoRedo = <T>(initialValue: T) => {
             const isInputFocused = inputRef.current === document.activeElement;
 
             if (!hasInput || !isInputFocused) {
+                console.log('no input or not focused');
                 return;
             }
 
-            const isUndoShortcut = event.key === 'z' && event.ctrlKey;
-            const isRedoShortcut = event.key === 'y' && event.ctrlKey;
+            const isMacUndoShortcut = event.key === 'z' && event.metaKey;
+            const isMacRedoShortcut = event.key === 'y' && event.metaKey;
+            const isWindowsUndoShortcut = event.key === 'z' && event.ctrlKey;
+            const isWindowsRedoShortcut = event.key === 'y' && event.ctrlKey;
 
-            if (isUndoShortcut) {
+            const isMacUndo = isMac && isMacUndoShortcut;
+            const isWindowsUndo = isWindows && isWindowsUndoShortcut;
+            const isUndo = isMacUndo || isWindowsUndo;
+
+            const isMacRedo = isMac && isMacRedoShortcut;
+            const isWindowsRedo = isWindows && isWindowsRedoShortcut;
+            const isRedo = isMacRedo || isWindowsRedo;
+
+            if (isUndo) {
                 event.preventDefault();
                 undo();
-            } else if (isRedoShortcut) {
+            } else if (isRedo) {
                 event.preventDefault();
                 redo();
             }
@@ -57,7 +76,7 @@ const useUndoRedo = <T>(initialValue: T) => {
 
     const curState = undoStack[currentIndex];
 
-    return [curState, inputRef, { push, undo, redo }];
+    return [curState, inputRef, { push, undo, redo }] as const;
 }
 
 export default useUndoRedo;
