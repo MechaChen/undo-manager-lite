@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const useUndoRedo = <T>(initialValue: T) => {
     const [undoStack, setUndoStack] = useState<T[]>([initialValue]);
     const [currentIndex, setCurrentIndex] = useState(0);
+    const inputRef = useRef<HTMLInputElement>(null);
 
     const LOWER_BOUND = 0;
     const UPPER_BOUND = undoStack.length - 1;
@@ -31,6 +32,13 @@ const useUndoRedo = <T>(initialValue: T) => {
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
+            const hasInput = inputRef.current;
+            const isInputFocused = inputRef.current === document.activeElement;
+
+            if (!hasInput || !isInputFocused) {
+                return;
+            }
+
             const isUndoShortcut = event.key === 'z' && event.ctrlKey;
             const isRedoShortcut = event.key === 'y' && event.ctrlKey;
 
@@ -49,7 +57,7 @@ const useUndoRedo = <T>(initialValue: T) => {
 
     const curState = undoStack[currentIndex];
 
-    return [curState, { push, undo, redo }];
+    return [curState, inputRef, { push, undo, redo }];
 }
 
 export default useUndoRedo;
