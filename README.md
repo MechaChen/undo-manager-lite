@@ -1,54 +1,62 @@
-# React + TypeScript + Vite
+# Undo redo hook lite
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Demo: 
 
-Currently, two official plugins are available:
+https://github.com/user-attachments/assets/14d5548e-5ea5-42e0-b016-673fa6729107
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+&nbsp;
 
-## Expanding the ESLint configuration
+There are 2 ways to implement undo/redo mechanism:
+1. single undo stack and move by index ([./src/hooks/useUndoRedoByIndex.ts](https://github.com/MechaChen/undo-manager-lite/blob/main/src/hooks/useUndoRedoByIndex.ts))
+2. 2 stacks - undo stack & redo stack ([./src/hooks/useUndoRedoByTwoStack.ts](https://github.com/MechaChen/undo-manager-lite/blob/main/src/hooks/useUndoRedoByTwoStack.ts))
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+&nbsp;
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+## Single undo stack and move by index
+Use a single stack to store the user's operation history, and
+- when user undo, move index backward (-1)
+- when user redo, move index forward (+1)
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+&nbsp;
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## 2 Stacks - undo stack & redo stack
+Use 2 stacks to store the undo and redo histories
+- when user undo
+  1. `pop` current state from undo stack
+  2. `push` current state to redo stack
+  3. get the latest previous state from the last item in the undo stack
+  4. set state with the latest previous version
+ 
+- when user redo
+  1. `pop` next state from redo stack
+  2. `push` redo state to undo stack
+  3. set state with next version
+ 
+&nbsp;
+ 
+## Comparison
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
-```
+| Feature | by index | by 2 stacks |
+|---------|-------------------|----------------------|
+| Implementation | Single array + index | Two stacks (undo/redo) |
+| Memory Usage | ✅ Less (single array) | ⚠️ More (two arrays) |
+| Code Complexity | ⚠️ Complex (index management) | ✅ Simple (intuitive push/pop) |
+| Error Risk | ⚠️ High (index out of bounds) | ✅ Low (no index management) |
+| Extensibility | ⚠️ Difficult (complex index logic) | ✅ Easy (simple to add features) |
+| Performance | ✅ Better (fewer slice operations) | ⚠️ Worse (maintain two arrays) |
+| Readability | ⚠️ Poor (need to understand index logic) | ✅ Good (clear semantics) |
+| Maintainability | ⚠️ Poor (prone to bugs) | ✅ Good (clear logic) |
+| Used by | - Google Docs (early version)<br>- Microsoft Word (early version)<br>- Adobe Photoshop (early version) | - [Lexical](https://github.com/facebook/lexical/blob/main/packages/lexical-history/src/index.ts)<br> - [NSUndo manager](https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/UndoArchitecture/Articles/RegisteringUndo.html#//apple_ref/doc/uid/20000206-SW2) (iOS, macOS standard) - VS Code<br>- Sublime Text<br>- Atom<br>- Google Docs (current version)<br>- Microsoft Word (current version)<br>- Adobe Photoshop (current version)<br>- Figma |
+
+&nbsp;
+
+## Optimization
+To prevent memory leak, we can setup undo stack size limit, and when new operation come in, 
+which makes the stack exceed the limit, slice the stack by size of (current stack size - limit)
+
+
+&nbsp;
+
+## References
+- [UI Algorithms: A Tiny Undo Stack](https://blog.julik.nl/2025/03/a-tiny-undo-stack)
+- [Build an Undo-Redo Hook in React with Keyboard Shortcut Support: Step-by-Step Tutorial](https://www.youtube.com/watch?v=pR1r-1KGtNU)
