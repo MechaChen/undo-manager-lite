@@ -37,6 +37,7 @@ function InputWithTwoStackUndoRedo() {
         Undo/Redo By Two Stack
       </label>
       <input
+        autoComplete="off"
         id="two-stack-undo-redo"
         type="text"
         ref={inputRef}

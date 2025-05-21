@@ -20,13 +20,14 @@ const useUndoRedoByTwoStack = <T>(initialValue: T, limit: number = 10) => {
     }
 
     const undo = () => {
-        if (undoStack.current.length === 0) {
+        if (undoStack.current.length <= 1) {
             return;
         }
 
-        const prevStep = undoStack.current.pop();
-        redoStack.current.push(prevStep!);
-        setValue(prevStep!);
+        const currentValue = undoStack.current.pop();
+        const prevValue = undoStack.current[undoStack.current.length - 1];
+        redoStack.current.push(currentValue!);
+        setValue(prevValue);
     }
     
     const redo = () => {
@@ -45,7 +46,6 @@ const useUndoRedoByTwoStack = <T>(initialValue: T, limit: number = 10) => {
             const isInputFocused = inputRef.current === document.activeElement;
 
             if (!hasInput || !isInputFocused) {
-                console.log('no input or not focused');
                 return;
             }
 
