@@ -1,10 +1,31 @@
 # Undo redo hook lite
 
-Demo: 
+- [Getting Started](#getting-started)
+- [Demo](#demo)
+- Undo/Redo Mechanisms
+  - [Single Undo Stack and Move by Index](#single-undo-stack-and-move-by-index)
+  - [2 Stacks - Undo Stack & Redo Stack](#2-stacks---undo-stack--redo-stack)
+- [Comparison](#comparison)
+- [Optimization](#optimization)
+- [References](#references)
+
+&nbsp;
+
+## Getting Started
+
+1. install `bun`
+2. `bun install`
+3. `bun dev`
+4. start play
+
+&nbsp;
+
+## Demo: 
 
 https://github.com/user-attachments/assets/14d5548e-5ea5-42e0-b016-673fa6729107
 
 &nbsp;
+
 
 There are 2 ways to implement undo/redo mechanism:
 1. single undo stack and move by index ([./src/hooks/useUndoRedoByIndex.ts](https://github.com/MechaChen/undo-manager-lite/blob/main/src/hooks/useUndoRedoByIndex.ts))
