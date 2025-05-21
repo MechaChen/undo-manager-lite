@@ -1,41 +1,42 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 const isMac = /Macintosh|MacIntel|MacPPC|Mac68K/.test(navigator.userAgent);
 const isWindows = /Win32|Win64|Windows|WinCE/.test(navigator.userAgent);
 
-const useUndoRedo = <T>(initialValue: T, limit: number = 10) => {
-    const [undoStack, setUndoStack] = useState<T[]>([initialValue]);
-    const [currentIndex, setCurrentIndex] = useState(0);
+const useUndoRedoByTwoStack = <T>(initialValue: T, limit: number = 10) => {
+    const [value, setValue] = useState(initialValue);
     const inputRef = useRef<HTMLInputElement>(null);
-
-    const LOWER_BOUND = 0;
-    const UPPER_BOUND = undoStack.length - 1;
-
-    // 3 steps:
-        // 1. push new value
-        // 2. undo
-        // 3. redo
+    const undoStack = useRef<T[]>([initialValue]);
+    const redoStack = useRef<T[]>([]);
 
     const push = (value: T) => {
-        let newUndoStack = undoStack.slice(0, currentIndex + 1);
-        newUndoStack.push(value);
-
-        if (undoStack.length > limit) {
-            newUndoStack = newUndoStack.slice(undoStack.length - limit);
+        undoStack.current.push(value);
+        if (undoStack.current.length > limit) {
+            undoStack.current.shift();
         }
 
-        setUndoStack(newUndoStack);
-        setCurrentIndex(newUndoStack.length - 1);
+        redoStack.current = [];
+        setValue(value);
     }
 
     const undo = () => {
-        const prevStep = Math.max(LOWER_BOUND, currentIndex - 1);
-        setCurrentIndex(prevStep);
-    }
+        if (undoStack.current.length === 0) {
+            return;
+        }
 
+        const prevStep = undoStack.current.pop();
+        redoStack.current.push(prevStep!);
+        setValue(prevStep!);
+    }
+    
     const redo = () => {
-        const nextStep = Math.min(UPPER_BOUND, currentIndex + 1);
-        setCurrentIndex(nextStep);
+        if (redoStack.current.length === 0) {
+            return;
+        }
+
+        const nextStep = redoStack.current.pop();
+        undoStack.current.push(value);
+        setValue(nextStep!);
     }
 
     useEffect(() => {
@@ -72,11 +73,17 @@ const useUndoRedo = <T>(initialValue: T, limit: number = 10) => {
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [currentIndex, redo, undo]);
+    }, [undoStack.current, redoStack.current]);
 
-    const curState = undoStack[currentIndex];
+    const clear = () => {
+        undoStack.current = [];
+        redoStack.current = [];
+    }
 
-    return [curState, inputRef, { push, undo, redo }] as const;
+    const canUndo = undoStack.current.length > 0;
+    const canRedo = redoStack.current.length > 0;
+
+    return [value, inputRef, { push, undo, redo, clear }, { canUndo, canRedo }] as const;
 }
 
-export default useUndoRedo;
+export default useUndoRedoByTwoStack;
