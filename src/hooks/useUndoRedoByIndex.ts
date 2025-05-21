@@ -4,12 +4,12 @@ const isMac = /Macintosh|MacIntel|MacPPC|Mac68K/.test(navigator.userAgent);
 const isWindows = /Win32|Win64|Windows|WinCE/.test(navigator.userAgent);
 
 const useUndoRedoByIndex = <T>(initialValue: T, limit: number = 10) => {
-    const [undoStack, setUndoStack] = useState<T[]>([initialValue]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
+    const undoStack = useRef<T[]>([initialValue]);
 
     const LOWER_BOUND = 0;
-    const UPPER_BOUND = undoStack.length - 1;
+    const UPPER_BOUND = undoStack.current.length - 1;
 
     // 3 steps:
         // 1. push new value
@@ -17,14 +17,14 @@ const useUndoRedoByIndex = <T>(initialValue: T, limit: number = 10) => {
         // 3. redo
 
     const push = (value: T) => {
-        let newUndoStack = undoStack.slice(0, currentIndex + 1);
+        let newUndoStack = undoStack.current.slice(0, currentIndex + 1);
         newUndoStack.push(value);
 
-        if (undoStack.length > limit) {
-            newUndoStack = newUndoStack.slice(undoStack.length - limit);
+        if (undoStack.current.length > limit) {
+            newUndoStack = newUndoStack.slice(undoStack.current.length - limit);
         }
 
-        setUndoStack(newUndoStack);
+        undoStack.current = newUndoStack;
         setCurrentIndex(newUndoStack.length - 1);
     }
 
@@ -74,7 +74,7 @@ const useUndoRedoByIndex = <T>(initialValue: T, limit: number = 10) => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [currentIndex, redo, undo]);
 
-    const curState = undoStack[currentIndex];
+    const curState = undoStack.current[currentIndex];
 
     return [curState, inputRef, { push, undo, redo }] as const;
 }
